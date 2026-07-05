@@ -91,6 +91,7 @@ def main():
         print('usage: lynx                    menu')
         print('       lynx install            install model')
         print('       lynx install tools      dev tools')
+        print('       lynx train              train model')
         print('       lynx upgrade            update lynx')
         print('       lynx -v                 version')
         return
@@ -105,6 +106,12 @@ def main():
         except Exception as e:
             print(f'lynx: error — {e}')
         return
+    if args[0] == 'train':
+        import subprocess
+        d = Path(os.getenv('USERPROFILE')) / 'Documents' / 'files' / 'Lynx Sharp 1'
+        subprocess.run([sys.executable, str(d / 'py' / 'train.py'), 'train'])
+        return
+
     if args[0] == 'install':
         if len(args) > 1 and args[1] == 'tools':
             install_tools()
