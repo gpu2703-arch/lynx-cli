@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 # Lynx Sharp CLI — установщик для Windows
-$repo  = "https://raw.githubusercontent.com/kiro-ai/lynx/main"
+$repo  = "https://raw.githubusercontent.com/gpu2703-arch/lynx-cli/main"
 $dest  = "$env:LOCALAPPDATA\lynx"
 $exe   = "$dest\lynx.exe"
 $cli   = "$dest\lynx_cli.py"
