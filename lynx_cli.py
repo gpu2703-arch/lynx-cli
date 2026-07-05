@@ -109,7 +109,9 @@ def main():
     if args[0] == 'train':
         import subprocess
         d = Path(os.getenv('USERPROFILE')) / 'Documents' / 'files' / 'Lynx Sharp 1'
-        subprocess.run([sys.executable, str(d / 'py' / 'train.py'), 'train'])
+        args = [sys.executable, str(d / 'py' / 'train.py'), 'train']
+        if '--resume' in sys.argv: args.append('--resume')
+        subprocess.run(args)
         return
 
     if args[0] == 'install':
