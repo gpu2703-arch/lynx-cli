@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import subprocess, sys
+import subprocess, sys, os
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 
 VERSION = '0.1.0'
 MODELS = {
@@ -9,6 +9,7 @@ MODELS = {
     '2': {'name': 'Sharp 2',     'id': 'sharp-2',  'params': '300M', 'desc': 'mid, code + chat'},
     '3': {'name': 'Sharp 4B',    'id': 'sharp-4b', 'params': '4B',   'desc': 'heavy, cloud GPU'},
 }
+HF = 'https://huggingface.co/gpu2703-arch'
 MENU = '''\
 +-- Lynx Sharp -----------------+
 |                                |
@@ -21,6 +22,26 @@ MENU = '''\
 |  q) Quit                      |
 |                                |
 +-------------------------------+'''
+
+def download(url, dest, label=''):
+    req = Request(url, headers={'User-Agent': 'lynx-cli/0.1'})
+    resp = urlopen(req)
+    total = int(resp.headers.get('Content-Length', 0))
+    chunk = 8192
+    downloaded = 0
+    with open(dest, 'wb') as f:
+        while True:
+            data = resp.read(chunk)
+            if not data: break
+            f.write(data)
+            downloaded += len(data)
+            if total:
+                pct = downloaded * 100 // total
+                bar = '#' * (pct // 5) + '-' * (20 - pct // 5)
+                print(f'\r  {label} [{bar}] {pct}%', end='', flush=True)
+            else:
+                print(f'\r  {label} {downloaded // 1024} KB', end='', flush=True)
+    print()
 
 def menu():
     while True:
@@ -41,10 +62,17 @@ def menu():
 
 def install_model(key):
     m = MODELS[key]
-    print(f'  installing {m["name"]} ({m["params"]})...')
-    dest = Path(__file__).resolve().parent / 'models' / m['id']
+    base = Path(os.getenv('LOCALAPPDATA', Path.home())) / 'Lynx' / 'models'
+    dest = base / m['id']
     dest.mkdir(parents=True, exist_ok=True)
-    print(f'  saved to {dest}')
+    pt = dest / 'model.pt'
+    print(f'  downloading {m["name"]} ({m["params"]})...')
+    url = f'{HF}/{m["id"]}/resolve/main/model.pt'
+    try:
+        download(url, pt, label=m['id'])
+        print(f'  saved: {pt} ({pt.stat().st_size // 1024 // 1024} MB)')
+    except Exception as e:
+        print(f'\n  error: {e}')
 
 def install_tools():
     print('  installing dev tools...')
@@ -72,7 +100,7 @@ def main():
         url = 'https://raw.githubusercontent.com/gpu2703-arch/lynx-cli/main/lynx_cli.py'
         dest = Path(__file__).resolve()
         try:
-            dest.write_bytes(urlopen(url).read())
+            download(url, dest, label='lynx')
             print('lynx: updated')
         except Exception as e:
             print(f'lynx: error — {e}')
@@ -82,7 +110,7 @@ def main():
             install_tools()
         elif len(args) > 1:
             for k, v in MODELS.items():
-                if args[1] in (v['id'], v['name'].lower()):
+                if args[1] in (k, v['id'], v['name'].lower()):
                     install_model(k); return
             print(f'unknown: {args[1]}')
         else:
